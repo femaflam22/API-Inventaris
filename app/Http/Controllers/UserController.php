@@ -21,12 +21,12 @@ class UserController extends Controller
     {
         try {
             $payload = UserRequest::validate($request);
-            $stuff = $this->userService->store($payload);
+            $user = $this->userService->store($payload);
             // jika mengambil data gunakan ::collection, jika menambah/mengubah data gunakan new
             return response()->json([
                 "status" => 200,
                 "message" => "Berhasil membuat akun!",
-                "data" => new UserResource($stuff)
+                "data" => new UserResource($user)
             ], 200);
         } catch (\Exception $err) {
             return response()->json([
@@ -40,24 +40,32 @@ class UserController extends Controller
     {
         try {
             $payload = UserLoginRequest::validate($request);
-            $token = Auth::attempt($payload);
-            if (!$token) {
+            $userStatus = $this->userService->checkStatus($payload);
+            if ($userStatus) {
+                $token = Auth::attempt($payload);
+                if (!$token) {
+                    return response()->json([
+                        "status" => 400,
+                        "message" => 'User not found',
+                        "data" => []
+                    ], 400);
+                }
+                $respondWithToken = [
+                    'access_token' => $token,
+                    'token_type' => 'bearer',
+                    'user' => auth()->user(),
+                ];
+                return response()->json([
+                    "status" => 200,
+                    "message" => "Berhasil login!",
+                    "data" => $respondWithToken
+                ], 200);
+            } else {
                 return response()->json([
                     "status" => 400,
-                    "message" => 'User not found',
-                    "data" => []
+                    "message" => "Tidak dapat melakukan proses login. User tidak aktif!"
                 ], 400);
             }
-            $respondWithToken = [
-                'access_token' => $token,
-                'token_type' => 'bearer',
-                'user' => auth()->user(),
-            ];
-            return response()->json([
-                "status" => 200,
-                "message" => "Berhasil login!",
-                "data" => $respondWithToken
-            ], 200);
         } catch (\Exception $err) {
             return response()->json([
                 "status" => 400,
@@ -91,6 +99,40 @@ class UserController extends Controller
                 "status" => 200,
                 "message" => 'berhasil logout!',
                 "data" => []
+            ], 200);
+        } catch (\Exception $err) {
+            return response()->json([
+                "status" => 400,
+                "message" => $err->getMessage()
+            ], 400);
+        }
+    }
+
+    public function nonAktif($userId)
+    {
+        try {
+            $updatedData = $this->userService->nonAktif($userId);
+            return response()->json([
+                "status" => 200,
+                "message" => "Berhasil menonaktifkan akun!",
+                "data" => new UserResource($updatedData)
+            ], 200);
+        } catch (\Exception $err) {
+            return response()->json([
+                "status" => 400,
+                "message" => $err->getMessage()
+            ], 400);
+        }
+    }
+
+    public function index()
+    {
+        try {
+            $updatedData = $this->userService->index();
+            return response()->json([
+                "status" => 200,
+                "message" => "Berhasil menampilkan seluruh data user!",
+                "data" => UserResource::collection($updatedData)
             ], 200);
         } catch (\Exception $err) {
             return response()->json([

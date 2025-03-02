@@ -17,12 +17,18 @@ $router->get('/', function () use ($router) {
     return $router->app->version();
 });
 
-$router->post('/register', 'UserController@register');
 $router->post('/login', 'UserController@login');
 
 $router->group(['middleware' => 'auth'], function () use ($router) {
     $router->get('/me', 'UserController@me');
     $router->get('/logout', 'UserController@logout');
+
+    $router->post('/register', 'UserController@register');
+    $router->group(['prefix' => 'users'], function () use ($router) {
+        $router->get('/', 'UserController@index');
+        $router->patch('/non-aktif/{userId}', 'UserController@nonAktif');
+    });
+
     $router->group(['prefix' => 'stuffs'], function () use ($router) {
         $router->get('/', 'StuffController@index');
         $router->post('/', 'StuffController@store');

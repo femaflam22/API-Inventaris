@@ -17,4 +17,19 @@ class UserService {
         $data['password'] = Hash::make($data['password']);
         return $this->userRepository->regis($data);
     }
+
+    public function nonAktif($id)
+    {
+        return $this->userRepository->nonAktif($id);
+    }
+
+    public function index()
+    {
+        return $this->userRepository->index();
+    }
+
+    public function checkStatus(array $data)
+    {
+        return $this->userRepository->checkStatus($data);
+    }
 }
